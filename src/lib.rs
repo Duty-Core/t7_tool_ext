@@ -29,8 +29,6 @@ pub unsafe extern "system" fn DllMain(
 }
 
 pub fn ext_entypoint() {
-    better_panic::install();
-
     TermLogger::init(
         LevelFilter::Info,
         Config::default(),
