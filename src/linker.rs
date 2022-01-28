@@ -1,5 +1,5 @@
 use core::{mem::transmute, ptr::null_mut};
-use std::ffi::CStr;
+use std::{ffi::{CStr, OsStr}, path::Path};
 
 use windows_sys::Win32::{System::LibraryLoader::GetModuleHandleA};
 
@@ -41,7 +41,17 @@ unsafe extern "C" fn load_asset(buffer: *mut i8) -> usize {
         return (S_LOADASSET.unwrap())(buffer);
     };
     pextln!("Linking Asset {}...", asset);
-    (S_LOADASSET.unwrap())(buffer)
+    let time = std::time::Instant::now();
+    match Path::new(asset).extension().and_then(OsStr::to_str) {
+        Some(".luac") => (), // do compiled lua stuff
+        Some(".lua") => (), // do lua stuff
+        _ => (),
+    }
+
+    let r = (S_LOADASSET.unwrap())(buffer);
+    println!("Linking {} took {:?}ms", asset, time.elapsed());
+
+    r
 }
 
 unsafe extern "C" fn load_script_asset(buffer: *const i8) -> usize {
@@ -49,5 +59,13 @@ unsafe extern "C" fn load_script_asset(buffer: *const i8) -> usize {
         return (S_LOADASSET.unwrap())(buffer);
     };
     pextln!("Linking Script {}...", asset);
-    (S_LOADSCRIPTASSET.unwrap())(buffer)
+    let time = std::time::Instant::now();
+    match Path::new(asset).extension().and_then(OsStr::to_str) {
+        Some(".gscc" | ".cscc" | ".gshc") => (), // do compiled gsc stuff
+        _ => (),
+    }
+    let r = (S_LOADSCRIPTASSET.unwrap())(buffer);
+    println!("Linking {} took {:?}", asset, time.elapsed());
+
+    r
 }
