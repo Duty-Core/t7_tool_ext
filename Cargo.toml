@@ -9,6 +9,23 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-log = "0.4.14"
-simplelog = "0.11.2"
-winapi = "0.3.9"
+libc-print = "0.1.17"
+windows-sys = {version = "0.30.0", features = [
+    "Win32_System_Console",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_System_ProcessStatus",
+    "Win32_System_SystemServices",
+    "Win32_System_Threading",
+    "Win32_Foundation",
+]}
+
+[profile.release]
+debug = true
+
+[profile.release-minsize]
+inherits = "release"
+codegen-units = 1
+lto = "fat"
+opt-level = "z"
+panic = "abort"

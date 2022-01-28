@@ -1,53 +1,51 @@
+#![feature(let_else)]
+#![no_main]
+
+#[macro_use]
+mod macros;
 mod gdtdb;
+mod hook;
 mod linker;
 
-use std::{path::Path, ptr::null};
+use core::{ffi::c_void, ptr::null_mut};
+use core::mem::MaybeUninit;
+use std::sync::Once;
 
-use log::LevelFilter;
-use simplelog::{ColorChoice, Config, TermLogger, TerminalMode};
-use winapi::{
-    shared::minwindef::{BOOL, DWORD, HINSTANCE, LPVOID, MAX_PATH, TRUE},
-    um::{
-        libloaderapi::{GetModuleFileNameA, GetModuleHandleW},
-        winnt::DLL_PROCESS_ATTACH,
+use windows_sys::Win32::{
+    Foundation::{BOOL, HINSTANCE, MAX_PATH},
+    System::{
+        LibraryLoader::GetModuleHandleA, ProcessStatus::K32GetModuleBaseNameA,
+        SystemServices::DLL_PROCESS_ATTACH,
     },
 };
+
+static ENTRY_ONCE: Once = Once::new();
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "system" fn DllMain(
     _hins_dll: HINSTANCE,
-    fdw_reason: DWORD,
-    _lpv_reserved: LPVOID,
+    fdw_reason: u32,
+    _lpv_reserved: *const c_void,
 ) -> BOOL {
     match fdw_reason {
-        DLL_PROCESS_ATTACH => ext_entypoint(),
+        DLL_PROCESS_ATTACH => ENTRY_ONCE.call_once(ext_entypoint),
         _ => (),
     }
 
-    TRUE
+    1
 }
 
 pub fn ext_entypoint() {
-    TermLogger::init(
-        LevelFilter::Info,
-        Config::default(),
-        TerminalMode::Mixed,
-        ColorChoice::Auto,
-    )
-    .expect("TermLogger::init failed");
-
     unsafe {
-        let base = GetModuleHandleW(null());
-        let mut file_name_b: Vec<i8> = vec![0; MAX_PATH];
-        let name_len = GetModuleFileNameA(base, file_name_b.as_mut_ptr().cast(), MAX_PATH as u32);
-        let file_name =
-            String::from_raw_parts(file_name_b.as_mut_ptr().cast(), name_len as usize, MAX_PATH);
-        let file_without_ext = Path::new(&file_name).file_name().unwrap().to_str();
+        let base = GetModuleHandleA(null_mut());
+        let mut file_name = MaybeUninit::<[u8; MAX_PATH as usize]>::uninit();
+        let file_name_len = K32GetModuleBaseNameA(-1 as _, base, file_name.as_mut_ptr().cast(), MAX_PATH) as usize;
+        let file_name = file_name.assume_init();
 
-        match file_without_ext {
-            Some("linker_modtools.exe") => linker::patch_linker(),
-            Some("gdtdb.exe") => gdtdb::patch_gdtdb(),
+        match &file_name[..file_name_len] {
+            b"linker_modtools.exe" => linker::patch_linker(),
+            b"gdtdb.exe" => gdtdb::patch_gdtdb(),
             _ => (),
         }
     }

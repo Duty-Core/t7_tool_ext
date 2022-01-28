@@ -1,2 +1,2 @@
 [alias]
-release = "build --release -Z build-std=alloc,core,std,panic_abort,proc_macro -Z build-std-features=panic_immediate_abort --target x86_64-pc-windows-msvc"
+minsize = "build --profile release-minsize -Z build-std=alloc,std,core,panic_abort,proc_macro -Z build-std-features=panic_immediate_abort --target x86_64-pc-windows-msvc"

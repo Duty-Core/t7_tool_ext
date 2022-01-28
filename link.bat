@@ -1,6 +1,6 @@
 @echo off
 IF ("%TA_TOOLS_PATH%") NEQ ("") (
-    MKLINK "%TA_TOOLS_PATH%\\bin\\RemoteLogger.dll" "%~dp0\\target\\x86_64-pc-windows-msvc\\release\\t7_tool_ext.dll"
+    MKLINK "%TA_TOOLS_PATH%\\bin\\RemoteLogger.dll" "%~dp0\\target\\x86_64-pc-windows-msvc\\release-minsize\\t7_tool_ext.dll"
     GOTO END
 )
 
