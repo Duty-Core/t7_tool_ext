@@ -49,7 +49,7 @@ unsafe extern "C" fn load_asset(buffer: *mut i8) -> usize {
     }
 
     let r = (S_LOADASSET.unwrap())(buffer);
-    println!("Linking {} took {:?}ms", asset, time.elapsed());
+    println!("Linking {} took {:?}", asset, time.elapsed());
 
     r
 }
